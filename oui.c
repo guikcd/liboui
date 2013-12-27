@@ -1,3 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <regex.h>
+#include "uthash.h"
+
 #include "oui.h"
 
 struct Manufacturer {
@@ -9,7 +15,7 @@ struct Manufacturer {
 struct Manufacturer *manufacturers = NULL;
 
 /* Initialize the hash with "oui -> organization" values */
-void create_hash() {
+int create_hash() {
 	regex_t re;
 	size_t ngroups;
 	regmatch_t *matches;
@@ -27,6 +33,7 @@ void create_hash() {
     if (regcomp(&re, LINE_TO_FIND, REG_EXTENDED) != 0) {
         fprintf(stderr, "Failed to compile regex '%s'\n", LINE_TO_FIND);
 		regfree(&re);
+		return EXIT_FAILURE;
     }
 	else {
 		if (DEBUG == 1)
@@ -39,6 +46,7 @@ void create_hash() {
     {   
     	printf("Error! Could not open file\n");
 		fclose(oui_file);
+		return EXIT_FAILURE;
 	}
 	else {
 		if (DEBUG == 1)
@@ -77,6 +85,7 @@ void create_hash() {
 	free(matches);
 	regfree(&re);
 	fclose(oui_file);
+	return EXIT_SUCCESS;
 }
 
 /* Get the organization (vendor) for the oui
