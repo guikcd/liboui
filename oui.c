@@ -70,7 +70,7 @@ int create_hash() {
 				snprintf(buf_oui, sizeof(buf_oui), "%.*s", matches[1].rm_eo - matches[1].rm_so, &line[matches[1].rm_so]);
 				snprintf(buf_organization, sizeof(buf_organization), "%.*s", matches[2].rm_eo - matches[2].rm_so, &line[matches[2].rm_so]);
 				/* unwanted trailing \n */
-				buf_organization[strlen(buf_organization)-1] = '\0';
+				buf_organization[strnlen(buf_organization, ORGANIZATION_LENGTH)-1] = '\0';
 
 				if (DEBUG == 1)
 					printf("OUI: %s, Org: %s\n", buf_oui, buf_organization);
@@ -125,7 +125,7 @@ static void add_organization(const char oui[OUI_LENGTH], const char organization
 	strncpy(entry->organization, organization, ORGANIZATION_LENGTH);
 	if (DEBUG == 1)
 		printf("Adding %s, %s\n", oui, organization);
-	HASH_ADD_KEYPTR(hh, manufacturers, entry->oui, strlen(entry->oui), entry);
+	HASH_ADD_KEYPTR(hh, manufacturers, entry->oui, strnlen(entry->oui, OUI_LENGTH), entry);
 }
 
 /*
@@ -136,7 +136,7 @@ static void add_organization(const char oui[OUI_LENGTH], const char organization
  * ex.: 0a:0b:0c -> 0A-0B-0C
  * */
 static void normalize_oui(char new_oui[OUI_LENGTH], const char oui[OUI_LENGTH]) {
-	/* strlen() returns unsigned int (size_t) */
+	/* strnlen() returns unsigned int (size_t) */
 	unsigned int i;
 	strncpy(new_oui, oui, OUI_LENGTH);
 
