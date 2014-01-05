@@ -17,8 +17,8 @@ oui: oui.o
 oui.o: oui.c oui.h
 	$(CC) -o $(EXEC).o -c $(EXEC).c $(CFLAGS)
 
-test: test_oui.c
-	$(CC) -o test_oui test_oui.c -L. -l$(EXEC)
+test: test_oui.c liboui
+	$(CC) -o test_oui test_oui.c -g -L. -l$(EXEC)
 	#$(CC) test_oui.c oui.o
 	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:. ./test_oui
 
