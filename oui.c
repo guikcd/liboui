@@ -12,6 +12,7 @@ struct Manufacturer {
 	UT_hash_handle hh;
 };
 
+/* Contains all manufacturers with "oui" -> "organization name" values*/
 struct Manufacturer *manufacturers = NULL;
 
 /* Initialize the hash with "oui -> organization" values */
@@ -37,33 +38,33 @@ int create_hash() {
     }
 	else {
 		if (DEBUG == 1)
-			printf("Regex compiled\n");
+			fprintf(stdout, "Regex compiled\n");
 		ngroups = re.re_nsub + 2;
 		matches = malloc(ngroups * sizeof(regmatch_t));
 	}
 
 	if (!oui_file)
     {   
-    	printf("Error! Could not open file\n");
+    	fprintf(stderr, "Error! Could not open file\n");
 		fclose(oui_file);
 		return EXIT_FAILURE;
 	}
 	else {
 		if (DEBUG == 1)
-			printf("File opened\n");
+			fprintf(stdout, "File opened\n");
 	}
 
 	while ((read = getline(&line, &len, oui_file)) != -1) {
 		/* only get line that contain (hex) */
 		if (DEBUG == 1)
-			printf("Analysing line '%s'\n", line);
+			fprintf(stdout, "Analysing line '%s'\n", line);
 
 		retval = regexec(&re, line, ngroups, matches, 0);
 		/*if (DEBUG == 1)
 			printf("Regex match ? %d\n", retval);*/
 		if (retval == 0) {
 			if (DEBUG == 1)
-				printf("Retrieved line of length %zu :\n", read);
+				fprintf(stdout, "Retrieved line of length %zu :\n", read);
 			/*for (nmatched = 0; nmatched < ngroups; nmatched++) {*/
 				/*printf("nmatched: %d, eo: %d, so: %d\n", (int)nmatched, matches[nmatched].rm_eo, matches[nmatched].rm_so);*/
 				/* FIXME: trailing spaces */
@@ -73,7 +74,7 @@ int create_hash() {
 				buf_organization[strnlen(buf_organization, ORGANIZATION_LENGTH)-1] = '\0';
 
 				if (DEBUG == 1)
-					printf("OUI: %s, Org: %s\n", buf_oui, buf_organization);
+					fprintf(stdout, "OUI: %s, Org: %s\n", buf_oui, buf_organization);
 				add_organization(buf_oui, buf_organization);
 			/*}*/
 		}
@@ -89,31 +90,79 @@ int create_hash() {
 }
 
 /* Get the organization (vendor) for the oui
+ * The oui can be of the following form:
+ * - ff:ff:ff:ff:ff:ff or FF:FF:FF:FF:FF:FF (full mac)
+ * - FFFFFF or ffffff (just oui without two digit separator)
+ * or
+ * - ffffffffffff or FFFFFFFFFFFF (full mac without two digit separator)
+ * - digit separator can be ":" or "-" (ex.: FF:FF:FF or FF-FF-FF)
  * Returns EXIT_SUCCESS or EXIT_FAILURE
- * FIXME: bug when calling the function twice with the same oui
- */
-int get_organization(char org[ORGANIZATION_LENGTH], const char oui[OUI_LENGTH]) {
-	struct Manufacturer *entry;
-	entry = malloc(sizeof(struct Manufacturer));
-	char normalized_oui[ORGANIZATION_LENGTH];
+ * FIXME: bug when calling the function twice with the same oui */
+int get_organization(char org[ORGANIZATION_LENGTH], const char *oui) {
+	int len;
+	len = strlen(oui);
 
-	/* oui are stored like 00-00-1A */
-	normalize_oui(normalized_oui, oui);
-	if (DEBUG == 1)
-		printf("Normalized oui: %s (original %s)\n", normalized_oui, oui);
+	/* only accept oui or full mac address */
+	if (len == 8 || len == 17 || len == 6 || len == 12) {
+		struct Manufacturer *entry;
+		entry = malloc(sizeof(struct Manufacturer));
+		char normalized_oui[ORGANIZATION_LENGTH];
+		char *just_oui = malloc(sizeof(oui));
 
-	HASH_FIND_STR(manufacturers, normalized_oui, entry);
-	if (!entry) {
-		free(entry);
+		/* FF:FF:FF or ff:ff:ff (just oui with separator)
+		 * or
+		 * ff:ff:ff:ff:ff:ff or FF:FF:FF:FF:FF:FF (full mac)
+		 * only the first 8 chars are interesting */
+		if (len == 8 || len == 17) {
+			just_oui[0] = oui[0];
+			just_oui[1] = oui[1];
+			just_oui[2] = oui[2];
+			just_oui[3] = oui[3];
+			just_oui[4] = oui[4];
+			just_oui[5] = oui[5];
+			just_oui[6] = oui[6];
+			just_oui[7] = oui[7];
+			just_oui[8] = '\0';
+			normalize_oui(normalized_oui, just_oui);
+		}
+		/* FFFFFF or ffffff (just oui without two digit separator)
+		 * or
+		 * ffffffffffff or FFFFFFFFFFFF (full mac without two digit separator)
+		 * only the first 8 chars are interesting, so ignore nic id */
+		else {
+		/*if (len == 6 || len == 12) {*/
+			just_oui[0] = oui[0];
+			just_oui[1] = oui[1];
+			just_oui[2] = DASH;
+			just_oui[3] = oui[2];
+			just_oui[4] = oui[3];
+			just_oui[5] = DASH;
+			just_oui[6] = oui[4];
+			just_oui[7] = oui[5];
+			just_oui[8] = '\0';
+			normalize_oui(normalized_oui, just_oui);
+		}
+
+		if (DEBUG == 1)
+			fprintf(stdout, "Normalized oui: %s (original %s)\n", normalized_oui, oui);
+
+		HASH_FIND_STR(manufacturers, normalized_oui, entry);
+		if (!entry) {
+			/*free(entry);*/
+			return EXIT_FAILURE;
+		}
+
+		if (DEBUG == 1)
+			fprintf(stdout, "Found entry %s for %s\n", entry->organization, normalized_oui);
+
+		strncpy(org, entry->organization, ORGANIZATION_LENGTH);
+		/*free(entry);*/
+		return EXIT_SUCCESS;
+	}
+	else {
+		fprintf(stderr, "%s is %d long (expected %d)\n", oui, len, OUI_LENGTH);
 		return EXIT_FAILURE;
 	}
-
-	if (DEBUG == 1)
-		printf("Found entry %s for %s\n", entry->organization, normalized_oui);
-
-	strncpy(org, entry->organization, ORGANIZATION_LENGTH);
-	free(entry);
-	return EXIT_SUCCESS;
 }
 
 /* Add oui and org to the hash
@@ -124,7 +173,7 @@ static void add_organization(const char oui[OUI_LENGTH], const char organization
 	strncpy(entry->oui, oui, OUI_LENGTH);
 	strncpy(entry->organization, organization, ORGANIZATION_LENGTH);
 	if (DEBUG == 1)
-		printf("Adding %s, %s\n", oui, organization);
+		fprintf(stdout, "Adding %s, %s\n", oui, organization);
 	HASH_ADD_KEYPTR(hh, manufacturers, entry->oui, strnlen(entry->oui, OUI_LENGTH), entry);
 }
 
@@ -177,7 +226,7 @@ int main (void) {
 
 	res = get_organization(buf, my_oui);
 	if (!res) {
-		printf("res(%d): %s\n", res, buf);
+		fprintf(stdout, "res(%d): %s\n", res, buf);
 	}
 	else {
 		printf("Fail to found %s vendor!\n", my_oui);

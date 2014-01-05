@@ -31,8 +31,14 @@
 	 * ex.: 00-00-00 -> XEROX CORPORATION */
 	int create_hash();
 	
-	/* Get the organization (vendor) for the oui */
-	int get_organization(char org[ORGANIZATION_LENGTH], const char oui[OUI_LENGTH]);
+	/* Get the organization (vendor) for the oui
+	 * The oui can be of the following form:
+	 * - ff:ff:ff:ff:ff:ff or FF:FF:FF:FF:FF:FF (full mac)
+	 * - FF:FF:FF or ff:ff:ff (just oui)
+	 * - digit separator can be ":" or "-" (ex.: FF:FF:FF or FF-FF-FF)
+	 * Returns EXIT_SUCCESS or EXIT_FAILURE
+	 * FIXME: bug when calling the function twice with the same oui */
+	int get_organization(char org[ORGANIZATION_LENGTH], const char *oui);
 	
 	void destroy_hash();
 	
