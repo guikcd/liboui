@@ -96,16 +96,14 @@ int create_hash() {
  * or
  * - ffffffffffff or FFFFFFFFFFFF (full mac without two digit separator)
  * - digit separator can be ":" or "-" (ex.: FF:FF:FF or FF-FF-FF)
- * Returns EXIT_SUCCESS or EXIT_FAILURE
- * FIXME: bug when calling the function twice with the same oui */
-int get_organization(char org[ORGANIZATION_LENGTH], const char *oui) {
+ * Returns EXIT_SUCCESS or EXIT_FAILURE */
+int get_organization(char *org, const char *oui) {
 	int len;
 	len = strlen(oui);
 
 	/* only accept oui or full mac address */
 	if (len == 8 || len == 17 || len == 6 || len == 12) {
 		struct Manufacturer *entry;
-		entry = malloc(sizeof(struct Manufacturer));
 		char normalized_oui[ORGANIZATION_LENGTH];
 		char *just_oui = malloc(sizeof(oui));
 
@@ -143,12 +141,13 @@ int get_organization(char org[ORGANIZATION_LENGTH], const char *oui) {
 			normalize_oui(normalized_oui, just_oui);
 		}
 
+		free(just_oui);
+
 		if (DEBUG == 1)
 			fprintf(stdout, "Normalized oui: %s (original %s)\n", normalized_oui, oui);
 
 		HASH_FIND_STR(manufacturers, normalized_oui, entry);
 		if (!entry) {
-			/*free(entry);*/
 			return EXIT_FAILURE;
 		}
 
@@ -156,18 +155,17 @@ int get_organization(char org[ORGANIZATION_LENGTH], const char *oui) {
 			fprintf(stdout, "Found entry %s for %s\n", entry->organization, normalized_oui);
 
 		strncpy(org, entry->organization, ORGANIZATION_LENGTH);
-		/*free(entry);*/
 		return EXIT_SUCCESS;
 	}
 	else {
-		fprintf(stderr, "%s is %d long (expected %d)\n", oui, len, OUI_LENGTH);
+		//fprintf(stderr, "%s is %d long (expected %d)\n", oui, len, OUI_LENGTH);
 		return EXIT_FAILURE;
 	}
 }
 
 /* Add oui and org to the hash
  * FIXME: why not free() "entry" ?*/
-static void add_organization(const char oui[OUI_LENGTH], const char organization[ORGANIZATION_LENGTH]) {
+static void add_organization(const char *oui, const char *organization) {
 	struct Manufacturer *entry;
 	entry = malloc(sizeof(struct Manufacturer));
 	strncpy(entry->oui, oui, OUI_LENGTH);
@@ -184,7 +182,7 @@ static void add_organization(const char oui[OUI_LENGTH], const char organization
  *
  * ex.: 0a:0b:0c -> 0A-0B-0C
  * */
-static void normalize_oui(char new_oui[OUI_LENGTH], const char oui[OUI_LENGTH]) {
+static void normalize_oui(char *new_oui, const char *oui) {
 	/* strnlen() returns unsigned int (size_t) */
 	unsigned int i;
 	strncpy(new_oui, oui, OUI_LENGTH);
