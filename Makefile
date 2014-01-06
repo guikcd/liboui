@@ -4,11 +4,9 @@ CFLAGS=-W -Wall -g -fPIC
 LDFLAGS=
 EXEC=oui
 
-all: liboui
-
 # SHARED OBJECT FILE
 liboui: oui.o
-	$(CC) -shared -o lib$(EXEC).so $(EXEC).o
+	$(CC) $(CFLAGS) -shared -o lib$(EXEC).so $(EXEC).o
 
 oui: oui.o
 	$(CC) -o $(EXEC) $(EXEC).o $(LDFLAGS)
@@ -19,7 +17,6 @@ oui.o: oui.c oui.h
 
 test: test_oui.c liboui
 	$(CC) -o test_oui test_oui.c -g -L. -l$(EXEC)
-	#$(CC) test_oui.c oui.o
 	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:. ./test_oui
 
 clean:
