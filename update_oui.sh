@@ -23,4 +23,4 @@ oui_url="http://standards.ieee.org/develop/regauth/oui/oui.txt"
 
 curl --compress "http://standards.ieee.org/develop/regauth/oui/oui.txt" > oui_full.txt
 # just keep interesting lines
-grep "(hex)" oui_full.txt > oui.txt
+awk '$0 ~ /(base 16)/ { print $0 }' oui_full.txt > oui.txt

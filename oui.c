@@ -3,6 +3,7 @@
 #include <string.h>
 #include <regex.h>
 #include "uthash.h"
+#include <ctype.h> // toupper()
 
 #include "oui.h"
 
@@ -104,52 +105,20 @@ int get_organization(char *org, const char *oui) {
 	/* only accept oui or full mac address */
 	if (len == 8 || len == 17 || len == 6 || len == 12) {
 		struct Manufacturer *entry;
-		char normalized_oui[ORGANIZATION_LENGTH];
-		char *just_oui = malloc(sizeof(oui));
+		char *normalized_oui = malloc(OUI_LENGTH);
 
-		/* FF:FF:FF or ff:ff:ff (just oui with separator)
-		 * or
-		 * ff:ff:ff:ff:ff:ff or FF:FF:FF:FF:FF:FF (full mac)
-		 * only the first 8 chars are interesting */
-		if (len == 8 || len == 17) {
-			just_oui[0] = oui[0];
-			just_oui[1] = oui[1];
-			just_oui[2] = oui[2];
-			just_oui[3] = oui[3];
-			just_oui[4] = oui[4];
-			just_oui[5] = oui[5];
-			just_oui[6] = oui[6];
-			just_oui[7] = oui[7];
-			just_oui[8] = '\0';
-			normalize_oui(normalized_oui, just_oui);
-		}
-		/* FFFFFF or ffffff (just oui without two digit separator)
-		 * or
-		 * ffffffffffff or FFFFFFFFFFFF (full mac without two digit separator)
-		 * only the first 8 chars are interesting, so ignore nic id */
-		else {
-		/*if (len == 6 || len == 12) {*/
-			just_oui[0] = oui[0];
-			just_oui[1] = oui[1];
-			just_oui[2] = DASH;
-			just_oui[3] = oui[2];
-			just_oui[4] = oui[3];
-			just_oui[5] = DASH;
-			just_oui[6] = oui[4];
-			just_oui[7] = oui[5];
-			just_oui[8] = '\0';
-			normalize_oui(normalized_oui, just_oui);
-		}
-
-		free(just_oui);
+		normalize_oui(normalized_oui, oui);
 
 		if (DEBUG == 1)
 			fprintf(stdout, "Normalized oui: %s (original %s)\n", normalized_oui, oui);
 
 		HASH_FIND_STR(manufacturers, normalized_oui, entry);
 		if (!entry) {
+			free(normalized_oui);
 			return EXIT_FAILURE;
 		}
+
+		free(normalized_oui);
 
 		if (DEBUG == 1)
 			fprintf(stdout, "Found entry %s for %s\n", entry->organization, normalized_oui);
@@ -158,7 +127,6 @@ int get_organization(char *org, const char *oui) {
 		return EXIT_SUCCESS;
 	}
 	else {
-		//fprintf(stderr, "%s is %d long (expected %d)\n", oui, len, OUI_LENGTH);
 		return EXIT_FAILURE;
 	}
 }
@@ -185,21 +153,41 @@ static void add_organization(const char *oui, const char *organization) {
 static void normalize_oui(char *new_oui, const char *oui) {
 	/* strnlen() returns unsigned int (size_t) */
 	unsigned int i;
-	strncpy(new_oui, oui, OUI_LENGTH);
 
-	/* uppercase hexa letters */
-	for (i=0; i<=strnlen(oui, OUI_LENGTH); i++) {
-		if( (oui[i] > 96 ) && (oui[i] < 123) )
-			new_oui[i] = oui[i] - 'a' + 'A';
-		else
-			/* just copy the char as it is */
-			new_oui[i] = oui[i];
+	int len;
+	len = strlen(oui);
+
+	/* FF:FF:FF or ff:ff:ff (just oui with separator)
+	 * or
+	 * ff:ff:ff:ff:ff:ff or FF:FF:FF:FF:FF:FF (full mac)
+	 * only the first 8 chars are interesting
+	 * dash or colons are not kept */
+	if (len == 8 || len == 17) {
+		new_oui[0] = oui[0];
+		new_oui[1] = oui[1];
+		new_oui[2] = oui[3];
+		new_oui[3] = oui[4];
+		new_oui[4] = oui[6];
+		new_oui[5] = oui[7];
+		new_oui[6] = '\0';
+	}
+	/* FFFFFF or ffffff (just oui without two digit separator)
+	 * or
+	 * ffffffffffff or FFFFFFFFFFFF (full mac without two digit separator)
+	 * only the first 8 chars are interesting, so ignore nic id */
+	else {
+		new_oui[0] = oui[0];
+		new_oui[1] = oui[1];
+		new_oui[2] = oui[2];
+		new_oui[3] = oui[3];
+		new_oui[4] = oui[4];
+		new_oui[5] = oui[5];
+		new_oui[6] = '\0';
 	}
 
-	/* replace ":" with "-" */
-	if (new_oui[2] == (char) COLON && new_oui[5] == COLON) {
-		new_oui[2] = DASH;
-		new_oui[5] = DASH;
+	/* uppercase hexa letters */
+	for (i=0; i<=strnlen(new_oui, OUI_LENGTH); i++) {
+		new_oui[i] = toupper(new_oui[i]);
 	}
 }
 

@@ -11,7 +11,7 @@ int main (void) {
 	/* virtually generated, not found in database */
 	const char *failed_mac = "52:54:00:8d:b8:20";
 
-	const char *macs[16];
+	const char *macs[17];
 	macs[0] = "6cf049";
 	macs[1] = "6CF049";
 
@@ -33,7 +33,9 @@ int main (void) {
 	macs[14] = "6C:F0:49:E0:95:9FA";
 	/* missing char */
 	macs[15] = "6CF04";
-	int i;
+	/* invalid */
+	macs[16] = "6C-F0;49";
+	int i = 0;
 
 	for (i; i < sizeof(macs) / sizeof(*macs); i++) {
 		//printf("%s\n", macs[i]);
