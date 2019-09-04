@@ -11,7 +11,7 @@ int main (void) {
 	/* virtually generated, not found in database */
 	const char *failed_mac = "52:54:00:8d:b8:20";
 
-	const char *macs[17];
+	const char *macs[MAC_ADDRESS_LENGTH];
 	macs[0] = "6cf049";
 	macs[1] = "6CF049";
 

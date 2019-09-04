@@ -14,6 +14,8 @@
 /* ex.: XEROX CORPORATION */
 #define ORGANIZATION_LENGTH 50
 
+#define MAC_ADDRESS_LENGTH 17
+
 /* ex.: "00-00-00   (hex)      XEROX CORPORATION" */
 #define LINE_TO_FIND "[[:space:]]*([0-9A-F]{6})[[:space:]]*\\(base.16\\)[[:space:]]*(.*)"
 

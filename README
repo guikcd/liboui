@@ -1,0 +1,19 @@
+This library could be used to lookup "Organizationally Unique Identifier" that
+identify a vendor.
+
+Many projects use an internal specific db; instead this lib intent to provide
+a simple lookup API.
+
+Maybe usefull for:
+* nmap
+* wireshark
+* aircrack-ng
+* kismet
+* systemd
+* hwdata
+* lshw
+* scli
+* arp-scan: http://www.nta-monitor.com/tools-resources/security-tools/arp-scan, https://github.com/royhills/arp-scan
+* netdiscover: http://nixgeneration.com/~jaime/netdiscover/ (no release since many months)
+* arpwatch: http://ee.lbl.gov/ (no release since many months)
+* macchanger: https://github.com/alobbs/macchanger (no release since many months)

@@ -25,6 +25,17 @@ int create_hash() {
 	int retval = 0;
 
 	FILE *oui_file = fopen(oui_filename, "r");
+	if (!oui_file)
+    {   
+    	fprintf(stderr, "Error! Could not open file\n");
+		fclose(oui_file);
+		return EXIT_FAILURE;
+	}
+	else {
+		if (DEBUG == 1)
+			fprintf(stdout, "File opened\n");
+	}
+
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
@@ -42,17 +53,6 @@ int create_hash() {
 			fprintf(stdout, "Regex compiled\n");
 		ngroups = re.re_nsub + 2;
 		matches = malloc(ngroups * sizeof(regmatch_t));
-	}
-
-	if (!oui_file)
-    {   
-    	fprintf(stderr, "Error! Could not open file\n");
-		fclose(oui_file);
-		return EXIT_FAILURE;
-	}
-	else {
-		if (DEBUG == 1)
-			fprintf(stdout, "File opened\n");
 	}
 
 	while ((read = getline(&line, &len, oui_file)) != -1) {
@@ -103,7 +103,7 @@ int get_organization(char *org, const char *oui) {
 	len = strlen(oui);
 
 	/* only accept oui or full mac address */
-	if (len == 8 || len == 17 || len == 6 || len == 12) {
+	if (len == 8 || len == MAC_ADDRESS_LENGTH || len == 6 || len == 12) {
 		struct Manufacturer *entry;
 		char *normalized_oui = malloc(OUI_LENGTH);
 
@@ -162,7 +162,7 @@ static void normalize_oui(char *new_oui, const char *oui) {
 	 * ff:ff:ff:ff:ff:ff or FF:FF:FF:FF:FF:FF (full mac)
 	 * only the first 8 chars are interesting
 	 * dash or colons are not kept */
-	if (len == 8 || len == 17) {
+	if (len == 8 || len == MAC_ADDRESS_LENGTH) {
 		new_oui[0] = oui[0];
 		new_oui[1] = oui[1];
 		new_oui[2] = oui[3];
